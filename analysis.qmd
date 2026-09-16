@@ -1,0 +1,178 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+data <- read_tsv("data/data_tsv.tsv", show_col_types = FALSE)
+data$Группа <- factor(data$Группа)
+data$Пол <- factor(data$Пол)
+data$`Группа крови` <- factor(
+  data$`Группа крови`,
+  levels = c("O (I)", "A (II)", "B (III)", "AB (IV)")
+)
+
+data
+```
+
+```{r}
+data |>
+  select(1, `Группа крови`, Рост)
+data |>
+  select(starts_with("б"))
+data |>
+  select(contains("_E1"))
+data |>
+  select(matches("_E\\d{1}"))
+data |>
+  select(where(is.numeric))
+```
+
+```{r}
+variables <- c("Базофилы_E1", "Эозинофилы_E1", "Гемоглобин_E1")
+data |>
+  select(all_of(variables))
+variables_missing <- c(variables, "Имя отсутствующей переменной")
+data |>
+  select(any_of(variables_missing))
+```
+
+```{r}
+data |>
+  select(Группа, starts_with("Гемоглобин"))
+data |>
+  select(!where(is.numeric))
+```
+
+```{r}
+data |>
+  select("Пол", "Эритроциты_E1", everything())
+```
+
+```{r}
+data |>
+  relocate(contains("Эритроциты"), .after = "Группа крови")
+```
+
+```{r}
+data |>
+  select(
+    "Эритроциты1" = "Эритроциты_E1",
+    "Эритроциты2" = "Эритроциты_E2"
+  )
+data |> select(`Группа`, function(x) !is.factor(x))
+
+data |>
+  select(
+    `Группа`,
+    (function(x) is.factor(x)) | where(function(x) is.numeric(x))
+  )
+
+data |> select(function(x) sd(x, na.rm = TRUE) > 1)
+```
+
+```{r}
+data |>
+  rename(
+    "Эритроциты1" = "Эритроциты_E1",
+    "Эритроциты2" = "Эритроциты_E2"
+  )
+```
+
+```{r}
+data |>
+  slice(c(1, 3, 5))
+data |>
+  slice(-c(1, 3, 5))
+data |>
+  slice_head(n = 4)
+data |>
+  slice_tail(prop = 0.08)
+data |>
+  slice_sample(prop = 0.05)
+```
+
+```{r}
+data |>
+  slice_min(Возраст)
+```
+
+```{r}
+data |>
+  filter(Пол == "Женский")
+```
+
+```{r}
+data |>
+  filter(`Группа крови` %in% c("A (II)", "O (I)") & Группа != "Группа 1")
+data |>
+  filter(Возраст >= 31, Возраст <= 34)
+data |>
+  filter(between(Возраст, 31, 34))
+data |>
+  filter(near(Эозинофилы_E1, 3.38, tol = 0.1))
+data |>
+  filter(if_all(.cols = contains("Базофилы"), .fns = function(x) x > 1.5))
+data |>
+  filter(if_any(.cols = contains("Базофилы"), .fns = function(x) x > 1.5))
+```
+
+```{r}
+data |>
+  arrange(Возраст, `Группа крови`)
+data |>
+  arrange(desc(Рост), "Возраст")
+```
+
+```{r}
+data |>
+  group_by(Группа)
+```
+
+```{r}
+data |>
+  filter(Возраст > mean(Возраст))
+data |>
+  group_by(Группа) |>
+  filter(Возраст > mean(Возраст))
+```
+
+```{r}
+data |>
+  group_by(Группа) |>
+  arrange(Возраст, .by_group = TRUE)
+```
+
+```{r}
+data |> group_by(Группа) |> ungroup()
+```
+
+```{r}
+tibble(var_1 = 1:10, var_2 = var_1 + 1.123) |>
+  mutate(
+    var_sum = var_1 + var_2,
+    var_minus = var_1 - var_2,
+    var1_log = log(var_1),
+    var_2_round = round(var_2, 1),
+    var_2_ceil = ceiling(var_2),
+    var_2_floor = floor(var_2)
+  )
+```
+
+```{r}
+data |>
+  mutate(
+    `Женщины с четвертой группой крови` = if_else(
+      Пол == "Женский" & `Группа крови` == "AB (IV)",
+      "Да",
+      "Нет"
+    )
+  ) |>
+  select(`Женщины с четвертой группой крови`, everything()) |>
+  arrange(`Женщины с четвертой группой крови`)
+```
